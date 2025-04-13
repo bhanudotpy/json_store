@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html style="background:#111;color:#fff;margin:0;font-family:monospace;">
+<body>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const page = urlParams.get("page");
+  const binId = "67fb88e98a456b7966884b3d";
+  const apiKey = "$2a$10$z1ZRj6l3CfWivbEJtjfz/.wHRCGAJpRHOoEW09v0F7RlwfOxMFGpq";
+  const apiUrl = `https://api.jsonbin.io/v3/b/${binId}/latest`;
+
+  if (!page) {
+    document.body.textContent = "No page specified.";
+  } else {
+    fetch(apiUrl, {
+      headers: { "X-Master-Key": apiKey }
+    })
+    .then(res => res.json())
+    .then(data => {
+      const item = data.record[page];
+      document.body.textContent = item?.value || (typeof item === 'string' ? item : "No content available.");
+    })
+    .catch(() => {
+      document.body.textContent = "Failed to load content.";
+    });
+  }
+</script>
+</body>
+</html>

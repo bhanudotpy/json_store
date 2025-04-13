@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Coupon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+    #sidebar {
+      width: 0;
+      background: #1a1a1a;
+      overflow-x: hidden;
+      transition: 0.3s;
+      padding: 1rem 0;
+      position: fixed;
+      height: 100%;
+      z-index: 2;
+    }
+    #sidebar.open {
+      width: 300px;
+    }
+    #sidebar h3 {
+      padding: 0 1rem;
+    }
+    #recentUploads {
+      padding: 0 1rem;
+    }
+    .entry {
+      background: #292929;
+      color: #f0f0f0;
+      margin: 6px 0;
+      padding: 8px;
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
+    .entry a {
+      color: #0af;
+      text-decoration: none;
+    }
+    .entry .btn-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .entry button {
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      background: #0a84ff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .entry button:hover {
+      background: #006fd6;
+    }
+    #main {
+      flex-grow: 1;
+      margin-left: 0;
+      transition: margin-left 0.3s ease;
+      padding: 2rem;
+      max-width: 600px;
+    }
+    #sidebar.open ~ #main {
+      margin-left: 300px;
+    }
+    #menuToggle {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 3;
+      font-size: 1.2rem;
+      background: #333;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    label, input, button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      font-size: 1rem;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    button.submit-btn {
+      background: #0a84ff;
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s;
+    }
+    button.submit-btn:hover {
+      background: #006fd6;
+    }
+    .success { color: #0f0; }
+    .error { color: #f44; }
+    .link-output {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .view-all-toggle {
+      color: #0a84ff;
+      text-align: center;
+      cursor: pointer;
+      margin: 1rem;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="menuToggle" onclick="toggleSidebar()">☰</div>
+<div id="sidebar">
+  <h3>Recent Uploads</h3>
+  <div id="recentUploads"></div>
+  <span class="view-all-toggle" onclick="toggleAll()">View All</span>
+</div>
+<div id="main">
+  <h1>Upload Content</h1>
+  <form id="couponForm">
+    <input type="text" id="page" required placeholder="Enter Page Name - (eg:p1)" />
+    <input type="text" id="coupon" required placeholder="Enter Page Content - (eg:https://abc.com/f.mp3)" />
+    <button class="submit-btn" type="submit">Submit</button>
+    <p id="status"></p>
+  </form>
+  <div class="link-output" id="linkOutput"></div>
+</div>
+<script>
+  const binId = "67fb88e98a456b7966884b3d";
+  const apiKey = "$2a$10$z1ZRj6l3CfWivbEJtjfz/.wHRCGAJpRHOoEW09v0F7RlwfOxMFGpq";
+  const apiUrl = `https://api.jsonbin.io/v3/b/${binId}`;
+
+  let allEntries = [];
+  let viewAllExpanded = false;
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('main').classList.toggle('shifted');
+  }
+
+  function toggleAll() {
+    viewAllExpanded = !viewAllExpanded;
+    renderEntries(allEntries);
+  }
+
+  function renderEntries(data) {
+    allEntries = Object.entries(data)
+      .map(([key, obj]) => [key, typeof obj === 'string' ? { value: obj, timestamp: 0 } : obj])
+      .sort((a, b) => b[1].timestamp - a[1].timestamp);
+
+    const recentContainer = document.getElementById("recentUploads");
+    recentContainer.innerHTML = "";
+    allEntries.forEach(([key, { value }], i) => {
+      if (!viewAllExpanded && i >= 5) return;
+      const html = `
+        <div class='entry'>
+          <div><a href='view.html?page=${key}' target='_blank'>${key}</a>: ${value}</div>
+          <div class='btn-group'>
+            <button onclick="navigator.clipboard.writeText('${key}')">Copy ID</button>
+            <button onclick="navigator.clipboard.writeText('view.html?page=${key}')">Copy Link</button>
+          </div>
+        </div>`;
+      recentContainer.innerHTML += html;
+    });
+  }
+
+  fetch(apiUrl + "/latest", {
+    headers: { "X-Master-Key": apiKey }
+  }).then(res => res.json()).then(data => {
+    renderEntries(data.record);
+  });
+
+  document.getElementById("couponForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const page = document.getElementById("page").value.trim();
+    const coupon = document.getElementById("coupon").value.trim();
+    const statusEl = document.getElementById("status");
+    const linkOutput = document.getElementById("linkOutput");
+
+    if (!page || !coupon) {
+      statusEl.textContent = "Please fill in both fields.";
+      return;
+    }
+
+    try {
+      const res = await fetch(apiUrl + "/latest", {
+        headers: { "X-Master-Key": apiKey }
+      });
+      const existing = await res.json();
+      const updatedData = { ...existing.record, [page]: { value: coupon, timestamp: Date.now() } };
+      const putRes = await fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": apiKey,
+          "X-Bin-Versioning": "false"
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (putRes.ok) {
+        statusEl.textContent = "✅ Content updated successfully!";
+        statusEl.className = "success";
+        linkOutput.innerHTML = `<p>View your content:</p><code><a href='view.html?page=${page}' target='_blank'>view.html?page=${page}</a></code><br><button onclick=\"navigator.clipboard.writeText('view.html?page=${page}')\">📋 Copy Link</button>`;
+        renderEntries(updatedData);
+      } else {
+        throw new Error("Failed to update bin.");
+      }
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = "❌ Error updating content.";
+      statusEl.className = "error";
+    }
+  });
+</script>
+</body>
+</html>
