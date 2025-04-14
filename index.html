@@ -168,7 +168,7 @@
           <div><a href='view.html?page=${key}' target='_blank'>${key}</a>: ${value}</div>
           <div class='btn-group'>
             <button onclick="navigator.clipboard.writeText('${key}')">Copy ID</button>
-            <button onclick="navigator.clipboard.writeText('view.html?page=${key}')">Copy Link</button>
+            <button onclick="navigator.clipboard.writeText(location.origin +'view.html?page=${key}')">Copy Link</button>
           </div>
         </div>`;
       recentContainer.innerHTML += html;
@@ -213,7 +213,7 @@
       if (putRes.ok) {
         statusEl.textContent = "✅ Content updated successfully!";
         statusEl.className = "success";
-        linkOutput.innerHTML = `<p>View your content:</p><code><a href='view.html?page=${page}' target='_blank'>view.html?page=${page}</a></code><br><button onclick=\"navigator.clipboard.writeText('view.html?page=${page}')\">📋 Copy Link</button>`;
+        linkOutput.innerHTML = `<p>View your content:</p><code><a href='view.html?page=${page}' target='_blank'>view.html?page=${page}</a></code><br><button onclick=\"navigator.clipboard.writeText(location.origin +'view.html?page=${page}')\">📋 Copy Link</button>`;
         renderEntries(updatedData);
       } else {
         throw new Error("Failed to update bin.");
