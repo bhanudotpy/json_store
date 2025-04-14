@@ -40,27 +40,46 @@
       padding: 8px;
       border-radius: 5px;
       font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
     }
-    .entry a {
+    .entry-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .entry-content a {
       color: #0af;
       text-decoration: none;
+      margin-right: 8px;
     }
-    .entry .btn-group {
+    .btn-group {
       display: flex;
       gap: 6px;
+      flex-wrap: wrap;
       margin-top: 6px;
     }
-    .entry button {
+    .btn-group button {
       font-size: 0.75rem;
-      padding: 4px 8px;
-      background: #0a84ff;
-      color: #fff;
+      padding: 4px 6px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
     }
-    .entry button:hover {
+    .btn-copy {
+      background: #0a84ff;
+      color: #fff;
+    }
+    .btn-copy:hover {
       background: #006fd6;
+    }
+    .btn-delete {
+      background: #ff4d4d;
+      color: #fff;
+    }
+    .btn-delete:hover {
+      background: #e60000;
     }
     #main {
       flex-grow: 1;
@@ -84,7 +103,7 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    label, input, button {
+    label, input, button.submit-btn {
       display: block;
       width: 100%;
       margin: 10px 0;
@@ -154,6 +173,28 @@
     renderEntries(allEntries);
   }
 
+  function deleteEntry(key) {
+    fetch(apiUrl + "/latest", {
+      headers: { "X-Master-Key": apiKey }
+    })
+    .then(res => res.json())
+    .then(data => {
+      const updated = { ...data.record };
+      delete updated[key];
+      return fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": apiKey,
+          "X-Bin-Versioning": "false"
+        },
+        body: JSON.stringify(updated)
+      });
+    })
+    .then(() => location.reload())
+    .catch(err => console.error("Delete failed:", err));
+  }
+
   function renderEntries(data) {
     allEntries = Object.entries(data)
       .map(([key, obj]) => [key, typeof obj === 'string' ? { value: obj, timestamp: 0 } : obj])
@@ -165,10 +206,14 @@
       if (!viewAllExpanded && i >= 5) return;
       const html = `
         <div class='entry'>
-          <div><a href='view.html?page=${key}' target='_blank'>${key}</a>: ${value}</div>
+          <div class='entry-content'>
+            <a href='view.html?page=${key}' target='_blank'>${key}</a>
+            <span>${value}</span>
+          </div>
           <div class='btn-group'>
-            <button onclick="navigator.clipboard.writeText('${key}')">Copy ID</button>
-            <button onclick="navigator.clipboard.writeText(location.origin +'/json_store/view.html?page=${key}')">Copy Link</button>
+            <button class='btn-copy' onclick="navigator.clipboard.writeText('${key}')">Copy ID</button>
+            <button class='btn-copy' onclick="navigator.clipboard.writeText(location.origin +'/json_store/view.html?page=${key}')">Copy Link</button>
+            <button class='btn-delete' onclick="deleteEntry('${key}')">Delete</button>
           </div>
         </div>`;
       recentContainer.innerHTML += html;
